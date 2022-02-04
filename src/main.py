@@ -18,10 +18,12 @@ logger = logging.getLogger(__name__)
 
 # I've saved my API token information to a .env file, which gets loaded here
 load_dotenv()
-# CLIENT = os.getenv("CLIENT_ID")
-# SECRET = os.getenv("CLIENT_SECRET")
-# USERNAME = os.getenv("USERNAME")
-# PASSWORD = os.getenv("PASSWORD")
+CLIENT = os.getenv("PSYCHONAUT_BOT_CLIENT_ID")
+SECRET = os.getenv("PSYCHONAUT_BOT_CLIENT_SECRET")
+USERNAME = os.getenv("PSYCHONAUT_BOT_USERNAME")
+PASSWORD = os.getenv("PSYCHONAUT_BOT_PASSWORD")
+
+print(CLIENT, SECRET, USERNAME, PASSWORD)
 
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
@@ -152,7 +154,7 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
             continue
         substances_added += 1
         # print name
-        comment_str += f"##**Name**: [{sub['name'].title()}]({sub['url']})\n\n" 
+        comment_str += f"##**Name:** [{sub['name'].title()}]({sub['url']})\n\n" 
         # print summary
         summary = sub['summary'] if sub['summary'] else "*Unfortunately psychonautwiki api does not yet support retrieving drug summaries: https://github.com/psychonautwiki/bifrost/issues/13*" 
         comment_str += "##**Summary**\n\n" 
@@ -166,7 +168,7 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
                 comment_str += f"####**{roa.get('name').title()}**\n\n"
                 doses = roa["dose"]
                 if doses:
-                    comment_str += "**Doses**:\n\n"
+                    comment_str += "**Doses:**\n\n"
                     units = doses.get('units')
                     comment_str += "Level | Dosage\n"
                     comment_str += "---|---\n"
