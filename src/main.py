@@ -23,7 +23,12 @@ load_dotenv()
 # USERNAME = os.getenv("USERNAME")
 # PASSWORD = os.getenv("PASSWORD")
 
-
+CLIENT = "F4ed2wOJG9RJWLv_F8SCLg"
+# "dZbo6Ol_iR-Wx26tA5ZMEQ"
+SECRET = "PCkx3Txn5OW0kU8K2YXLGT39DVXGRw"
+# "1r0F_RNoqKvAwZemOFO_LojPP4gr2g"
+USERNAME = "psychonaut_bot"
+PASSWORD = "Jrugz123!"
 
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
@@ -53,10 +58,10 @@ def restart(handler: Callable):
     def wrapped_handler(*args, **kwargs):
         logger.info("Starting thread with: %s", args)
         while True:
-            try:
-                handler(*args, **kwargs)
-            except Exception as e:
-                logger.error("Exception: %s", e)
+            # try:
+            handler(*args, **kwargs)
+            # except Exception as e:
+                # logger.error("Exception: %s", e)
 
     return wrapped_handler
 
@@ -79,6 +84,7 @@ def iterate_posts(subreddit_name: str):
             logger.info(f"Added comment to post {str(post.title)}")
         else:
             logger.debug("Not commenting")
+        print("----------------------------\n\n\n")
 
 
 @restart
@@ -121,12 +127,14 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
                 lookup_results.update(result)
                 print(lookup_results)
                 has_keywords = True
+    
+    db.set(obj_id, [has_keywords])
+    db.dump()
+
     if not has_keywords:
         return False, lookup_results
 
     # print("get", db.get(obj_id))
-    db.set(obj_id, [obj_id])
-    db.dump()
     return True, lookup_results
 
 
@@ -136,35 +144,52 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
     for sub_name in results:
         sub = results[sub_name]
         # print name
-        comment_str += f"**Name**: [{sub['name']}]({sub['url']})\n\n" 
+        comment_str += f"##**Name**: [{sub['name'].title()}]({sub['url']})\n\n" 
         # print summary
-        comment_str += f"**Summary**: {sub['summary']}\n\n"
+        # comment_str += f"##**Summary** {sub['summary']}\n\n"
 
+        comment_str += f"##**Routes of Administrations**\n\n"
         # print dosage information
-        doses = sub['roas'][0]['dose']
-        if doses:
-            units = doses['units']
-            comment_str += "**Doses**:\n\n"
-            comment_str += "Level | Dosage\n"
-            comment_str += "---|---\n"
-            comment_str += f"Common | {expand(doses['common'])} {units}\n"
-            comment_str += f"Heavy | {expand(doses['heavy'])} {units}\n"
-            comment_str += f"Light | {expand(doses['light'])} {units}\n"
-            comment_str += f"Strong | {expand(doses['strong'])} {units}\n"
-            comment_str += f"Threshold | { expand(doses['threshold'])} {units}\n"
-            comment_str += ""
+        roas = sub["roas"]
+        if len(roas) > 0:
+            for roa in roas:
+                comment_str += f"####**{roa.get('name').title()}**\n\n"
+                comment_str += "**Doses**:\n\n"
+                doses = roa["dose"]
+                if doses:
+                    units = doses.get('units')
+                    comment_str += "Level | Dosage\n"
+                    comment_str += "---|---\n"
+                    if "common" in doses:
+                        comment_str += f"Common | {expand(doses['common'])} {units}\n"
+                    if "heavy" in doses:
+                        comment_str += f"Heavy | {expand(doses['heavy'])} {units}\n"
+                    if "light" in doses:
+                        comment_str += f"Light | {expand(doses['light'])} {units}\n"
+                    if "strong" in doses:
+                        comment_str += f"Strong | {expand(doses['strong'])} {units}\n"
+                    if "threshold" in doses:
+                        comment_str += f"Threshold | { expand(doses['threshold'])} {units}\n"
+                    comment_str += "\n\n"
 
-        # print duration information
-        duration = sub['roas'][0]['duration']
-        if duration:
-            comment_str += "**Duration**\n\n"
-            comment_str += f"Total | {expand(duration['total'])}\n"
-            comment_str += "---|---\n"
-            comment_str += f"Onset | {expand(duration['onset'])}\n"
-            comment_str += f"Come up | {expand(duration['comeup'])}\n"
-            comment_str += f"Peak | {expand(duration['peak'])}\n"
-            comment_str += f"Offset | {expand(duration['offset'])}\n"
-            comment_str += f"Afterglow | {expand(duration['afterglow'])}\n"
+                duration = roa["duration"]
+                # print duration information
+                if duration:
+                    comment_str += "**Duration**\n\n"
+                    if "total" in duration:
+                        comment_str += f"Total | {expand(duration['total'])}\n"
+                    comment_str += "---|---\n"
+                    if "onset" in duration:
+                        comment_str += f"Onset | {expand(duration['onset'])}\n"
+                    if "comeup" in duration:
+                        comment_str += f"Come up | {expand(duration['comeup'])}\n"
+                    if "peak" in duration:
+                        comment_str += f"Peak | {expand(duration['peak'])}\n"
+                    if "offset" in duration:
+                        comment_str += f"Offset | {expand(duration['offset'])}\n"
+                    if "afterglow" in duration:
+                        comment_str += f"Afterglow | {expand(duration['afterglow'])}\n"
+                    comment_str += "\n\n"
 
         comment_str += "------\n\n"
     

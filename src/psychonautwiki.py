@@ -15,7 +15,7 @@ headers = {
 #Small function that check if the object has "min" and "max" and if so, return both as a single string object.
 def expand(data):
     try:
-        units = None
+        units = ""
         if "units" in data:
             units = data["units"]
         if "min" and "max" in data:
