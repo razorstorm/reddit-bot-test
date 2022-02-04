@@ -24,7 +24,6 @@ load_dotenv()
 # PASSWORD = os.getenv("PASSWORD")
 
 
-
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
 
@@ -141,7 +140,9 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
         # print name
         comment_str += f"##**Name**: [{sub['name'].title()}]({sub['url']})\n\n" 
         # print summary
-        # comment_str += f"##**Summary** {sub['summary']}\n\n"
+        summary = sub['summary'] if sub['summary'] else "*Unfortunately psychonautwiki api does not yet support retrieving drug summaries: https://github.com/psychonautwiki/bifrost/issues/13*" 
+        comment_str += "##**Summary**\n\n" 
+        comment_str += f"{summary}\n\n"
 
         comment_str += f"##**Routes of Administrations**\n\n"
         # print dosage information
@@ -186,10 +187,9 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
                         comment_str += f"Afterglow | {expand(duration['afterglow'])}\n"
                     comment_str += "\n\n"
 
-        comment_str += "------\n\n"
+        comment_str += "\n\n------\n\n\n\n\n"
     
     disclaimer = f"^(I am a bot that links the hopefully relevant psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols.)\n\n"
-    # disclaimer = " ".join([f"^{word}" for word in disclaimer.split()]) + "\n\n"
     source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)\n\n"
     obj.reply(comment_str + disclaimer + source_links)
 
@@ -222,40 +222,10 @@ if __name__ == "__main__":
     logger.info("Main    : Creating threads")
     threads = []
     # iterate_posts("bot_test_razor_storm")
-    # chess_posts_thread = threading.Thread(
-    #     target=iterate_posts, args=("chess",), name="chess_posts"
-    # )
     test_thread = threading.Thread(
         target=iterate_posts, args=("bot_test_razor_storm",), name="razor_storm"
     )
-    # test_thread = threading.Thread(
-    #     target=iterate_posts, args=("drugscirclejerk",), name="razor_storm"
-    # )
-    # ac_posts_thread = threading.Thread(
-    #     target=iterate_posts, args=("anarchychess",), name="ac_posts"
-    # )
-    # chess_comments_thread = threading.Thread(
-    #     target=iterate_comments, args=("chess",), name="chess_comments"
-    # )
-    # ac_comments_thread = threading.Thread(
-    #     target=iterate_comments, args=("anarchychess",), name="ac_comments"
-    # )
-    # chessbeginners_posts_thread = threading.Thread(
-    #     target=iterate_posts, args=("chessbeginners",), name="chessbeginners_posts"
-    # )
-    # tournamentchess_posts_thread = threading.Thread(
-    #     target=iterate_posts, args=("tournamentchess",), name="tournamentchess_posts"
-    # )
-    # chessbeginners_comments_thread = threading.Thread(
-    #     target=iterate_comments,
-    #     args=("chessbeginners",),
-    #     name="chessbeginners_comments",
-    # )
-    # tournamentchess_comments_thread = threading.Thread(
-    #     target=iterate_comments,
-    #     args=("tournamentchess",),
-    #     name="tournamentchess_comments",
-    # )
+
     # mentions_thread = threading.Thread(
     #     target=listen_and_process_mentions,
     #     name="mentions",
