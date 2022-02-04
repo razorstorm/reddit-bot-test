@@ -25,7 +25,7 @@ load_dotenv()
 CLIENT = "dZbo6Ol_iR-Wx26tA5ZMEQ"
 SECRET = "1r0F_RNoqKvAwZemOFO_LojPP4gr2g"
 USERNAME = "razor_storm"
-PASSWORD = ""
+PASSWORD = "Lbc1337munia!"
 
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
@@ -161,7 +161,7 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
             print(f"text: {text} |")
             result = lookup(text)
             if result:
-                lookup_results.append(result)
+                lookup_results += result
                 has_keywords = True
     if not has_keywords:
         return False, lookup_results
@@ -180,36 +180,40 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
     #We loop through the response, objects
     for sub in results:
         # print name
-        comment_str += f"**Name**: {sub['name']}\n    " 
+        comment_str += f"**Name**: [{sub['name']}]({sub['url']})\n\n" 
         # print summary
-        comment_str += f"**Summary**: {sub['summary']}\n    "
+        comment_str += f"**Summary**: {sub['summary']}\n\n"
 
         # print dosage information
         doses = sub['roas'][0]['dose']
         if doses:
+            units = doses['units']
             comment_str += "**Doses**:\n\n"
             comment_str += "Level | Dosage\n"
-            comment_str += "---|---"
-            comment_str += f"Common {expand(doses['common'])}"
-        #     print(f"Heavy {doses['heavy']}")
-        #     print(f"Light {expand(doses['light'])}")
-        #     print(f"Strong {expand(doses['strong'])}")
-        #     print(f"Threshold { doses['threshold']}")
-        #     print(f"Units {doses['units']}")
-        #     print("")
+            comment_str += "---|---\n"
+            comment_str += f"Common | {expand(doses['common'])} {units}\n"
+            comment_str += f"Heavy | {expand(doses['heavy'])} {units}\n"
+            comment_str += f"Light | {expand(doses['light'])} {units}\n"
+            comment_str += f"Strong | {expand(doses['strong'])} {units}\n"
+            comment_str += f"Threshold | { expand(doses['threshold'])} {units}\n"
+            comment_str += ""
 
-        #   #print duration information
-        #   duration = subs['roas'][0]['duration']
-        #   if duration:
-        #     print(f"Afterglow {expand(duration['afterglow'])}")
-        #     print(f"Comeup {expand(duration['comeup'])}")
-        #     print(f"Duration {expand(duration['duration'])}")
-        #     print(f"Offset {expand(duration['offset'])}")
-        #     print(f"Onset {expand(duration['onset'])}")
-        #     print(f"Peak {expand(duration['peak'])}")
-        #     print(f"Total {expand(duration['total'])}")
-    comment_string = pasta + source_tag
-    obj.reply(comment_string)
+        # print duration information
+        duration = sub['roas'][0]['duration']
+        if duration:
+            comment_str += "**Duration**\n\n"
+            comment_str += f"Total | {expand(duration['total'])}\n"
+            comment_str += "---|---\n"
+            comment_str += f"Onset | {expand(duration['onset'])}\n"
+            comment_str += f"Come up | {expand(duration['comeup'])}\n"
+            comment_str += f"Peak | {expand(duration['peak'])}\n"
+            comment_str += f"Offset | {expand(duration['offset'])}\n"
+            comment_str += f"Afterglow | {expand(duration['afterglow'])}\n"
+
+        comment_str += "------"
+    
+    source_links = [^(fmhall)](https://www.reddit.com/user/fmhall) ^| [^(github)]({}) 
+    obj.reply(comment_str)
 
 
 def standardize_text(text: str) -> str:
