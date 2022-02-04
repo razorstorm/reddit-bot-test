@@ -9,6 +9,7 @@ import threading
 import logging
 import string
 import time
+import datetime
 from psychonautwiki import expand, lookup
 
 log_format = "%(asctime)s: %(threadName)s: %(message)s"
@@ -22,13 +23,13 @@ load_dotenv()
 # USERNAME = os.getenv("USERNAME")
 # PASSWORD = os.getenv("PASSWORD")
 
-CLIENT = "dZbo6Ol_iR-Wx26tA5ZMEQ"
-SECRET = "1r0F_RNoqKvAwZemOFO_LojPP4gr2g"
-USERNAME = "razor_storm"
-PASSWORD = ""
+
 
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
+
+DATE_CUTOFF = "02-01-2022"
+DATE_CUTOFF_TS = time.mktime(datetime.datetime.strptime(DATE_CUTOFF, "%d-%m-%Y").timetuple())
 
 # Set the path absolute path of the chess_post database
 pickle_path = os.path.dirname(os.path.abspath(__file__)) + "/comments.db"
@@ -59,25 +60,6 @@ def restart(handler: Callable):
 
     return wrapped_handler
 
-
-# @restart
-# def iterate_comments(subreddit_name: str):
-#     """
-#     The main loop of the program, called by the thread handler
-#     """
-#     # Instantiate the subreddit instances
-#     sub: Subreddit = reddit.subreddit(subreddit_name)
-
-#     for comment in sub.stream.comments():
-#         logger.debug(f"Analyzing {comment.body}")
-#         should_comment, is_low_effort = should_comment_on_comment(comment, subreddit_name)
-#         if should_comment:
-#             write_comment(comment, is_low_effort)
-#             logger.info(f"Added comment to comment {str(comment.body)}")
-#         else:
-#             logger.debug("Not commenting")
-
-
 @restart
 def iterate_posts(subreddit_name: str):
     """
@@ -90,7 +72,7 @@ def iterate_posts(subreddit_name: str):
         print(f"Analyzing post {post.title}")
         logger.debug(f"Analyzing post {post.title}")
         should_comment, results = should_comment_on_post(post)
-        print(should_comment, results)
+        print("should comment?", should_comment)
         if should_comment:
             write_comment(post, results)
             print(f"Added comment to post {str(post.title)}")
@@ -108,40 +90,6 @@ def listen_and_process_mentions():
             logger.info(f"Added comment to comment {str(message.body)}")
             message.mark_read()
 
-
-# def should_comment_on_comment(comment: Comment, subreddit_name: str) -> Tuple[bool, bool]:
-#     # comment.created_utc 
-#     if DONT_COMMENT_KEYWORD.lower() in comment.body.lower():
-#         return False, False
-
-#     body = standardize_text(comment.body)
-#     obj_id = str(comment.id)
-#     has_keywords = False
-#     is_low_effort = False
-
-#     for keyword in KEYWORDS:
-#         if keyword in body:
-#             has_keywords = True
-#             if body == keyword:
-#                 is_low_effort = True
-#     if not has_keywords and subreddit_name == "anarchychess":
-#         if random.randint(0, 1000) == TRIGGER_RANDOMLY:
-#             return True, False
-#         return False, is_low_effort
-#     if comment.author == "B0tRank":
-#         return True, True
-#     if comment.author == USERNAME:
-#         if not db.get(obj_id):
-#             db.set(obj_id, [obj_id])
-#             db.dump()
-#         return False, is_low_effort
-#     if not db.get(obj_id):
-#         db.set(obj_id, [obj_id])
-#         db.dump()
-#         return True, is_low_effort
-#     return False, is_low_effort
-
-
 def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
     if (
         DONT_COMMENT_KEYWORD.lower() in post.selftext.lower() 
@@ -151,6 +99,11 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
 
     body = standardize_text(post.selftext)
     title = standardize_text(post.title)
+    created_at = post.created_utc
+    print(created_at, DATE_CUTOFF_TS, created_at > DATE_CUTOFF_TS)
+    if created_at < DATE_CUTOFF_TS:
+        return False, []
+
     obj_id = str(post.id)
 
     # Don't bother looking at this post if we've already processed it before
@@ -158,15 +111,15 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
     if db.get(obj_id):
         return False, []
     has_keywords = False
-    lookup_results = []
+    lookup_results = {}
     all_text = body + " " + title
     for text in all_text.split():
         text = text.strip()
         if len(text) > 0 and not text.isspace():
-            print(f"text: {text} |")
             result = lookup(text)
             if result:
-                lookup_results += result
+                lookup_results.update(result)
+                print(lookup_results)
                 has_keywords = True
     if not has_keywords:
         return False, lookup_results
@@ -180,7 +133,8 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
 def write_comment(obj: Union[Comment, Submission], results: Any):
     comment_str = ""
     #We loop through the response, objects
-    for sub in results:
+    for sub_name in results:
+        sub = results[sub_name]
         # print name
         comment_str += f"**Name**: [{sub['name']}]({sub['url']})\n\n" 
         # print summary
@@ -214,8 +168,8 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
 
         comment_str += "------\n\n"
     
-    disclaimer = f"I am a bot that links the relevant (hopefully) psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols."
-    disclaimer = " ".join([f"^{word}" for word in disclaimer.split()]) + "\n\n"
+    disclaimer = f"^(I am a bot that links the hopefully relevant psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols.)\n\n"
+    # disclaimer = " ".join([f"^{word}" for word in disclaimer.split()]) + "\n\n"
     source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)\n\n"
     obj.reply(comment_str + disclaimer + source_links)
 
@@ -247,12 +201,16 @@ def delete_bad_comments(username: str):
 if __name__ == "__main__":
     logger.info("Main    : Creating threads")
     threads = []
+    # iterate_posts("bot_test_razor_storm")
     # chess_posts_thread = threading.Thread(
     #     target=iterate_posts, args=("chess",), name="chess_posts"
     # )
     test_thread = threading.Thread(
         target=iterate_posts, args=("bot_test_razor_storm",), name="razor_storm"
     )
+    # test_thread = threading.Thread(
+    #     target=iterate_posts, args=("drugscirclejerk",), name="razor_storm"
+    # )
     # ac_posts_thread = threading.Thread(
     #     target=iterate_posts, args=("anarchychess",), name="ac_posts"
     # )

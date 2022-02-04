@@ -76,7 +76,7 @@ def lookup(drug_name):
 
         #We check for a "data" object in the response, this is standard response for proper results
         if "data" in response:
-            return response["data"]["substances"]
+            return {sub["name"].lower(): sub for sub in response["data"]["substances"]}
         #If we instead run into an "error" then there was an error in the request
         elif "error" in response:
             print("There was an error in the API Request!!")
