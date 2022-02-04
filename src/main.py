@@ -23,12 +23,7 @@ load_dotenv()
 # USERNAME = os.getenv("USERNAME")
 # PASSWORD = os.getenv("PASSWORD")
 
-CLIENT = "F4ed2wOJG9RJWLv_F8SCLg"
-# "dZbo6Ol_iR-Wx26tA5ZMEQ"
-SECRET = "PCkx3Txn5OW0kU8K2YXLGT39DVXGRw"
-# "1r0F_RNoqKvAwZemOFO_LojPP4gr2g"
-USERNAME = "psychonaut_bot"
-PASSWORD = "Jrugz123!"
+
 
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
