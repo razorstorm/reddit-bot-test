@@ -25,7 +25,7 @@ load_dotenv()
 CLIENT = "dZbo6Ol_iR-Wx26tA5ZMEQ"
 SECRET = "1r0F_RNoqKvAwZemOFO_LojPP4gr2g"
 USERNAME = "razor_storm"
-PASSWORD = "Lbc1337munia!"
+PASSWORD = ""
 
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
@@ -152,6 +152,11 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
     body = standardize_text(post.selftext)
     title = standardize_text(post.title)
     obj_id = str(post.id)
+
+    # Don't bother looking at this post if we've already processed it before
+    # TODO only check post if its not older than X day. 
+    if db.get(obj_id):
+        return False, []
     has_keywords = False
     lookup_results = []
     all_text = body + " " + title
@@ -166,12 +171,11 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
     if not has_keywords:
         return False, lookup_results
     
-    # Only post if we haven't processed this one before already
+
     # print("get", db.get(obj_id))
-    if not db.get(obj_id):
-        db.set(obj_id, [obj_id])
-        db.dump()
-        return True, lookup_results
+    db.set(obj_id, [obj_id])
+    db.dump()
+    return True, lookup_results
     return False, []
 
 
@@ -212,8 +216,9 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
 
         comment_str += "------"
     
-    source_links = [^(fmhall)](https://www.reddit.com/user/fmhall) ^| [^(github)]({}) 
-    obj.reply(comment_str)
+    disclaimer = f"^I am a bot that links the relevant (hopefully) psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols."
+    source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)"
+    obj.reply(comment_str + source_links)
 
 
 def standardize_text(text: str) -> str:
