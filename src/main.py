@@ -1,5 +1,5 @@
 import os
-from typing import Union, Tuple
+from typing import Any, Union, Tuple
 from praw import Reddit
 from praw.models import Submission, Subreddit, Comment
 from dotenv import load_dotenv
@@ -8,8 +8,8 @@ from typing import Callable
 import threading
 import logging
 import string
-import random
 import time
+from psychonautwiki import expand, lookup
 
 log_format = "%(asctime)s: %(threadName)s: %(message)s"
 logging.basicConfig(format=log_format, level=logging.INFO, datefmt="%H:%M:%S")
@@ -17,27 +17,18 @@ logger = logging.getLogger(__name__)
 
 # I've saved my API token information to a .env file, which gets loaded here
 load_dotenv()
-CLIENT = os.getenv("CLIENT_ID")
-SECRET = os.getenv("CLIENT_SECRET")
-USERNAME = os.getenv("USERNAME")
-PASSWORD = os.getenv("PASSWORD")
+# CLIENT = os.getenv("CLIENT_ID")
+# SECRET = os.getenv("CLIENT_SECRET")
+# USERNAME = os.getenv("USERNAME")
+# PASSWORD = os.getenv("PASSWORD")
 
-KEYWORDS = {"pipi", "pampers", "tigran", "petrosian"}
+CLIENT = "dZbo6Ol_iR-Wx26tA5ZMEQ"
+SECRET = "1r0F_RNoqKvAwZemOFO_LojPP4gr2g"
+USERNAME = "razor_storm"
+PASSWORD = ""
+
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
-
-PASTA = """Are you kidding ??? What the **** are you talking about man ? You are a biggest looser i ever seen in my life ! You was doing PIPI in your pampers when i was beating players much more stronger then you! You are not proffesional, because proffesionals knew how to lose and congratulate opponents, you are like a girl crying after i beat you! Be brave, be honest to yourself and stop this trush talkings!!! Everybody know that i am very good blitz player, i can win anyone in the world in single game! And "w"esley "s"o is nobody for me, just a player who are crying every single time when loosing, ( remember what you say about Firouzja ) !!! Stop playing with my name, i deserve to have a good name during whole my chess carrier, I am Officially inviting you to OTB blitz match with the Prize fund! Both of us will invest 5000$ and winner takes it all!
-I suggest all other people who's intrested in this situation, just take a look at my results in 2016 and 2017 Blitz World championships, and that should be enough... No need to listen for every crying babe, Tigran Petrosyan is always play Fair ! And if someone will continue Officially talk about me like that, we will meet in Court! God bless with true! True will never die ! Liers will kicked off...\n\n"""
-
-SHORTENED_PHRASES = [
-    "Are you kidding ??? What the **** are you talking about man ?",
-    "You was doing PIPI in your pampers when i was beating players much more stronger then you!",
-    "Be brave, be honest to yourself and stop this trush talkings!!!",
-    "Everybody know that i am very good blitz player, i can win anyone in the world in single game!",
-    '"w"esley "s"o is nobody for me',
-    "Tigran Petrosyan is always play Fair !",
-    "God bless with true! True will never die ! Liers will kicked off...",
-]
 
 # Set the path absolute path of the chess_post database
 pickle_path = os.path.dirname(os.path.abspath(__file__)) + "/comments.db"
@@ -45,7 +36,7 @@ db = pickledb.load(pickle_path, True)
 
 # Create the reddit object instance using Praw
 reddit = Reddit(
-    user_agent="petrosian_bot",
+    user_agent="test_bot",
     client_id=CLIENT,
     client_secret=SECRET,
     username=USERNAME,
@@ -69,22 +60,22 @@ def restart(handler: Callable):
     return wrapped_handler
 
 
-@restart
-def iterate_comments(subreddit_name: str):
-    """
-    The main loop of the program, called by the thread handler
-    """
-    # Instantiate the subreddit instances
-    sub: Subreddit = reddit.subreddit(subreddit_name)
+# @restart
+# def iterate_comments(subreddit_name: str):
+#     """
+#     The main loop of the program, called by the thread handler
+#     """
+#     # Instantiate the subreddit instances
+#     sub: Subreddit = reddit.subreddit(subreddit_name)
 
-    for comment in sub.stream.comments():
-        logger.debug(f"Analyzing {comment.body}")
-        should_comment, is_low_effort = should_comment_on_comment(comment, subreddit_name)
-        if should_comment:
-            write_comment(comment, is_low_effort)
-            logger.info(f"Added comment to comment {str(comment.body)}")
-        else:
-            logger.debug("Not commenting")
+#     for comment in sub.stream.comments():
+#         logger.debug(f"Analyzing {comment.body}")
+#         should_comment, is_low_effort = should_comment_on_comment(comment, subreddit_name)
+#         if should_comment:
+#             write_comment(comment, is_low_effort)
+#             logger.info(f"Added comment to comment {str(comment.body)}")
+#         else:
+#             logger.debug("Not commenting")
 
 
 @restart
@@ -96,10 +87,13 @@ def iterate_posts(subreddit_name: str):
     sub: Subreddit = reddit.subreddit(subreddit_name)
 
     for post in sub.stream.submissions():
+        print(f"Analyzing post {post.title}")
         logger.debug(f"Analyzing post {post.title}")
-        should_comment, is_low_effort = should_comment_on_post(post)
+        should_comment, results = should_comment_on_post(post)
+        print(should_comment, results)
         if should_comment:
-            write_comment(post, is_low_effort)
+            write_comment(post, results)
+            print(f"Added comment to post {str(post.title)}")
             logger.info(f"Added comment to post {str(post.title)}")
         else:
             logger.debug("Not commenting")
@@ -115,39 +109,40 @@ def listen_and_process_mentions():
             message.mark_read()
 
 
-def should_comment_on_comment(comment: Comment, subreddit_name: str) -> Tuple[bool, bool]:
-    if DONT_COMMENT_KEYWORD.lower() in comment.body.lower():
-        return False, False
+# def should_comment_on_comment(comment: Comment, subreddit_name: str) -> Tuple[bool, bool]:
+#     # comment.created_utc 
+#     if DONT_COMMENT_KEYWORD.lower() in comment.body.lower():
+#         return False, False
 
-    body = standardize_text(comment.body)
-    obj_id = str(comment.id)
-    has_keywords = False
-    is_low_effort = False
+#     body = standardize_text(comment.body)
+#     obj_id = str(comment.id)
+#     has_keywords = False
+#     is_low_effort = False
 
-    for keyword in KEYWORDS:
-        if keyword in body:
-            has_keywords = True
-            if body == keyword:
-                is_low_effort = True
-    if not has_keywords and subreddit_name == "anarchychess":
-        if random.randint(0, 1000) == TRIGGER_RANDOMLY:
-            return True, False
-        return False, is_low_effort
-    if comment.author == "B0tRank":
-        return True, True
-    if comment.author == USERNAME:
-        if not db.get(obj_id):
-            db.set(obj_id, [obj_id])
-            db.dump()
-        return False, is_low_effort
-    if not db.get(obj_id):
-        db.set(obj_id, [obj_id])
-        db.dump()
-        return True, is_low_effort
-    return False, is_low_effort
+#     for keyword in KEYWORDS:
+#         if keyword in body:
+#             has_keywords = True
+#             if body == keyword:
+#                 is_low_effort = True
+#     if not has_keywords and subreddit_name == "anarchychess":
+#         if random.randint(0, 1000) == TRIGGER_RANDOMLY:
+#             return True, False
+#         return False, is_low_effort
+#     if comment.author == "B0tRank":
+#         return True, True
+#     if comment.author == USERNAME:
+#         if not db.get(obj_id):
+#             db.set(obj_id, [obj_id])
+#             db.dump()
+#         return False, is_low_effort
+#     if not db.get(obj_id):
+#         db.set(obj_id, [obj_id])
+#         db.dump()
+#         return True, is_low_effort
+#     return False, is_low_effort
 
 
-def should_comment_on_post(post: Submission) -> Tuple[bool, bool]:
+def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
     if (
         DONT_COMMENT_KEYWORD.lower() in post.selftext.lower() 
         or DONT_COMMENT_KEYWORD.lower() in post.title.lower()
@@ -158,39 +153,61 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, bool]:
     title = standardize_text(post.title)
     obj_id = str(post.id)
     has_keywords = False
-    is_low_effort = False
-    for keyword in KEYWORDS:
-        for text in [body, title]:
-            if keyword in text:
+    lookup_results = []
+    all_text = body + " " + title
+    for text in all_text.split():
+        text = text.strip()
+        if len(text) > 0 and not text.isspace():
+            print(f"text: {text} |")
+            result = lookup(text)
+            if result:
+                lookup_results.append(result)
                 has_keywords = True
-                if text == keyword:
-                    is_low_effort = True
     if not has_keywords:
-        return False, is_low_effort
-    if post.author == USERNAME:
-        if not db.get(obj_id):
-            db.set(obj_id, [obj_id])
-            db.dump()
-        return False, is_low_effort
+        return False, lookup_results
+    
+    # Only post if we haven't processed this one before already
+    # print("get", db.get(obj_id))
     if not db.get(obj_id):
         db.set(obj_id, [obj_id])
         db.dump()
-        return True, is_low_effort
-    return False, is_low_effort
+        return True, lookup_results
+    return False, []
 
 
-def write_comment(obj: Union[Comment, Submission], is_low_effort: bool = False):
-    if is_low_effort:
-        pasta = random.choice(SHORTENED_PHRASES) + "\n\n"
-    else:
-        pasta = PASTA
-    source_tag = (
-        "[^(fmhall)](https://www.reddit.com/user/fmhall) ^| [^(github)]({}) ^| [^(chill)]({})\n".format(
-            "https://github.com/fmhall/Petrosian-Bot",
-            "https://www.youtube.com/channel/UCqGhULGgnf6IbY5JXWuVVtQ/live"
-        )
-    )
+def write_comment(obj: Union[Comment, Submission], results: Any):
+    comment_str = ""
+    #We loop through the response, objects
+    for sub in results:
+        # print name
+        comment_str += f"**Name**: {sub['name']}\n    " 
+        # print summary
+        comment_str += f"**Summary**: {sub['summary']}\n    "
 
+        # print dosage information
+        doses = sub['roas'][0]['dose']
+        if doses:
+            comment_str += "**Doses**:\n\n"
+            comment_str += "Level | Dosage\n"
+            comment_str += "---|---"
+            comment_str += f"Common {expand(doses['common'])}"
+        #     print(f"Heavy {doses['heavy']}")
+        #     print(f"Light {expand(doses['light'])}")
+        #     print(f"Strong {expand(doses['strong'])}")
+        #     print(f"Threshold { doses['threshold']}")
+        #     print(f"Units {doses['units']}")
+        #     print("")
+
+        #   #print duration information
+        #   duration = subs['roas'][0]['duration']
+        #   if duration:
+        #     print(f"Afterglow {expand(duration['afterglow'])}")
+        #     print(f"Comeup {expand(duration['comeup'])}")
+        #     print(f"Duration {expand(duration['duration'])}")
+        #     print(f"Offset {expand(duration['offset'])}")
+        #     print(f"Onset {expand(duration['onset'])}")
+        #     print(f"Peak {expand(duration['peak'])}")
+        #     print(f"Total {expand(duration['total'])}")
     comment_string = pasta + source_tag
     obj.reply(comment_string)
 
@@ -222,52 +239,57 @@ def delete_bad_comments(username: str):
 if __name__ == "__main__":
     logger.info("Main    : Creating threads")
     threads = []
-    chess_posts_thread = threading.Thread(
-        target=iterate_posts, args=("chess",), name="chess_posts"
+    # chess_posts_thread = threading.Thread(
+    #     target=iterate_posts, args=("chess",), name="chess_posts"
+    # )
+    test_thread = threading.Thread(
+        target=iterate_posts, args=("bot_test_razor_storm",), name="razor_storm"
     )
-    ac_posts_thread = threading.Thread(
-        target=iterate_posts, args=("anarchychess",), name="ac_posts"
-    )
-    chess_comments_thread = threading.Thread(
-        target=iterate_comments, args=("chess",), name="chess_comments"
-    )
-    ac_comments_thread = threading.Thread(
-        target=iterate_comments, args=("anarchychess",), name="ac_comments"
-    )
-    chessbeginners_posts_thread = threading.Thread(
-        target=iterate_posts, args=("chessbeginners",), name="chessbeginners_posts"
-    )
-    tournamentchess_posts_thread = threading.Thread(
-        target=iterate_posts, args=("tournamentchess",), name="tournamentchess_posts"
-    )
-    chessbeginners_comments_thread = threading.Thread(
-        target=iterate_comments,
-        args=("chessbeginners",),
-        name="chessbeginners_comments",
-    )
-    tournamentchess_comments_thread = threading.Thread(
-        target=iterate_comments,
-        args=("tournamentchess",),
-        name="tournamentchess_comments",
-    )
-    mentions_thread = threading.Thread(
-        target=listen_and_process_mentions,
-        name="mentions",
-    )
-    cleanup_thread = threading.Thread(
-        target=delete_bad_comments, args=[USERNAME], name="cleanup"
-    )
+    # ac_posts_thread = threading.Thread(
+    #     target=iterate_posts, args=("anarchychess",), name="ac_posts"
+    # )
+    # chess_comments_thread = threading.Thread(
+    #     target=iterate_comments, args=("chess",), name="chess_comments"
+    # )
+    # ac_comments_thread = threading.Thread(
+    #     target=iterate_comments, args=("anarchychess",), name="ac_comments"
+    # )
+    # chessbeginners_posts_thread = threading.Thread(
+    #     target=iterate_posts, args=("chessbeginners",), name="chessbeginners_posts"
+    # )
+    # tournamentchess_posts_thread = threading.Thread(
+    #     target=iterate_posts, args=("tournamentchess",), name="tournamentchess_posts"
+    # )
+    # chessbeginners_comments_thread = threading.Thread(
+    #     target=iterate_comments,
+    #     args=("chessbeginners",),
+    #     name="chessbeginners_comments",
+    # )
+    # tournamentchess_comments_thread = threading.Thread(
+    #     target=iterate_comments,
+    #     args=("tournamentchess",),
+    #     name="tournamentchess_comments",
+    # )
+    # mentions_thread = threading.Thread(
+    #     target=listen_and_process_mentions,
+    #     name="mentions",
+    # )
+    # cleanup_thread = threading.Thread(
+    #     target=delete_bad_comments, args=[USERNAME], name="cleanup"
+    # )
 
-    threads.append(chess_posts_thread)
-    threads.append(ac_posts_thread)
-    threads.append(chess_comments_thread)
-    threads.append(ac_comments_thread)
-    threads.append(chessbeginners_posts_thread)
-    threads.append(tournamentchess_posts_thread)
-    threads.append(chessbeginners_comments_thread)
-    threads.append(tournamentchess_comments_thread)
-    threads.append(mentions_thread)
-    threads.append(cleanup_thread)
+    # threads.append(chess_posts_thread)
+    # threads.append(ac_posts_thread)
+    # threads.append(chess_comments_thread)
+    # threads.append(ac_comments_thread)
+    # threads.append(chessbeginners_posts_thread)
+    # threads.append(tournamentchess_posts_thread)
+    # threads.append(chessbeginners_comments_thread)
+    # threads.append(tournamentchess_comments_thread)
+    # threads.append(mentions_thread)
+    # threads.append(cleanup_thread)
+
+    threads.append(test_thread)
 
     logger.info("Main    : Starting threads")
     for thread in threads:
