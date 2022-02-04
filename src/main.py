@@ -1,5 +1,5 @@
 import os
-from typing import Any, Union, Tuple
+from typing import Any, Dict, Union, Tuple
 from praw import Reddit
 from praw.models import Submission, Subreddit, Comment
 from dotenv import load_dotenv
@@ -22,6 +22,7 @@ load_dotenv()
 # SECRET = os.getenv("CLIENT_SECRET")
 # USERNAME = os.getenv("USERNAME")
 # PASSWORD = os.getenv("PASSWORD")
+
 
 
 DONT_COMMENT_KEYWORD = "!nopipi"
@@ -131,12 +132,25 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
     # print("get", db.get(obj_id))
     return True, lookup_results
 
+def should_post_substance(sub: Dict[str, Any]):
+    if "name" not in sub:
+        return False
+    if "roas" not in sub:
+        return False
+    roas = sub["roas"]
+    if len(roas) <= 0:
+        return False
+    
+    return True
 
 def write_comment(obj: Union[Comment, Submission], results: Any):
     comment_str = ""
     #We loop through the response, objects
     for sub_name in results:
         sub = results[sub_name]
+        if not should_post_substance(sub):
+            print("Skipping substance:", sub_name, sub)
+            continue
         # print name
         comment_str += f"##**Name**: [{sub['name'].title()}]({sub['url']})\n\n" 
         # print summary
@@ -156,35 +170,24 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
                     units = doses.get('units')
                     comment_str += "Level | Dosage\n"
                     comment_str += "---|---\n"
-                    if "common" in doses:
-                        comment_str += f"Common | {expand(doses['common'])} {units}\n"
-                    if "heavy" in doses:
-                        comment_str += f"Heavy | {expand(doses['heavy'])} {units}\n"
-                    if "light" in doses:
-                        comment_str += f"Light | {expand(doses['light'])} {units}\n"
-                    if "strong" in doses:
-                        comment_str += f"Strong | {expand(doses['strong'])} {units}\n"
-                    if "threshold" in doses:
-                        comment_str += f"Threshold | { expand(doses['threshold'])} {units}\n"
+                    comment_str += f"Common | {expand(doses.get('common'))} {units}\n"
+                    comment_str += f"Heavy | {expand(doses.get('heavy'))} {units}\n"
+                    comment_str += f"Light | {expand(doses.get('light'))} {units}\n"
+                    comment_str += f"Strong | {expand(doses.get('strong'))} {units}\n"
+                    comment_str += f"Threshold | { expand(doses.get('threshold'))} {units}\n"
                     comment_str += "\n\n"
 
                 duration = roa["duration"]
                 # print duration information
                 if duration:
                     comment_str += "**Duration**\n\n"
-                    if "total" in duration:
-                        comment_str += f"Total | {expand(duration['total'])}\n"
+                    comment_str += f"Total | {expand(duration.get('total'))}\n"
                     comment_str += "---|---\n"
-                    if "onset" in duration:
-                        comment_str += f"Onset | {expand(duration['onset'])}\n"
-                    if "comeup" in duration:
-                        comment_str += f"Come up | {expand(duration['comeup'])}\n"
-                    if "peak" in duration:
-                        comment_str += f"Peak | {expand(duration['peak'])}\n"
-                    if "offset" in duration:
-                        comment_str += f"Offset | {expand(duration['offset'])}\n"
-                    if "afterglow" in duration:
-                        comment_str += f"Afterglow | {expand(duration['afterglow'])}\n"
+                    comment_str += f"Onset | {expand(duration.get('onset'))}\n"
+                    comment_str += f"Come up | {expand(duration.get('comeup'))}\n"
+                    comment_str += f"Peak | {expand(duration.get('peak'))}\n"
+                    comment_str += f"Offset | {expand(duration.get('offset'))}\n"
+                    comment_str += f"Afterglow | {expand(duration.get('afterglow'))}\n"
                     comment_str += "\n\n"
 
         comment_str += "\n\n------\n\n\n\n\n"
@@ -225,6 +228,9 @@ if __name__ == "__main__":
     test_thread = threading.Thread(
         target=iterate_posts, args=("bot_test_razor_storm",), name="razor_storm"
     )
+    drugs_circle_jerk_thread = threading.Thread(
+        target=iterate_posts, args=("drugscirclejerk",), name="razor_storm"
+    )
 
     # mentions_thread = threading.Thread(
     #     target=listen_and_process_mentions,
@@ -246,6 +252,7 @@ if __name__ == "__main__":
     # threads.append(cleanup_thread)
 
     threads.append(test_thread)
+    # threads.append(drugs_circle_jerk_thread)
 
     logger.info("Main    : Starting threads")
     for thread in threads:
