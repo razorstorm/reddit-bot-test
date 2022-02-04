@@ -170,13 +170,11 @@ def should_comment_on_post(post: Submission) -> Tuple[bool, Any]:
                 has_keywords = True
     if not has_keywords:
         return False, lookup_results
-    
 
     # print("get", db.get(obj_id))
     db.set(obj_id, [obj_id])
     db.dump()
     return True, lookup_results
-    return False, []
 
 
 def write_comment(obj: Union[Comment, Submission], results: Any):
@@ -214,11 +212,12 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
             comment_str += f"Offset | {expand(duration['offset'])}\n"
             comment_str += f"Afterglow | {expand(duration['afterglow'])}\n"
 
-        comment_str += "------"
+        comment_str += "------\n\n"
     
-    disclaimer = f"^I am a bot that links the relevant (hopefully) psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols."
-    source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)"
-    obj.reply(comment_str + source_links)
+    disclaimer = f"I am a bot that links the relevant (hopefully) psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols."
+    disclaimer = " ".join([f"^{word}" for word in disclaimer.split()]) + "\n\n"
+    source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)\n\n"
+    obj.reply(comment_str + disclaimer + source_links)
 
 
 def standardize_text(text: str) -> str:
