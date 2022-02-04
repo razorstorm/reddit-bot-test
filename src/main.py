@@ -23,8 +23,6 @@ load_dotenv()
 # USERNAME = os.getenv("USERNAME")
 # PASSWORD = os.getenv("PASSWORD")
 
-
-
 DONT_COMMENT_KEYWORD = "!nopipi"
 TRIGGER_RANDOMLY = 7
 
@@ -146,11 +144,13 @@ def should_post_substance(sub: Dict[str, Any]):
 def write_comment(obj: Union[Comment, Submission], results: Any):
     comment_str = ""
     #We loop through the response, objects
+    substances_added = 0
     for sub_name in results:
         sub = results[sub_name]
         if not should_post_substance(sub):
             print("Skipping substance:", sub_name, sub)
             continue
+        substances_added += 1
         # print name
         comment_str += f"##**Name**: [{sub['name'].title()}]({sub['url']})\n\n" 
         # print summary
@@ -164,9 +164,9 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
         if len(roas) > 0:
             for roa in roas:
                 comment_str += f"####**{roa.get('name').title()}**\n\n"
-                comment_str += "**Doses**:\n\n"
                 doses = roa["dose"]
                 if doses:
+                    comment_str += "**Doses**:\n\n"
                     units = doses.get('units')
                     comment_str += "Level | Dosage\n"
                     comment_str += "---|---\n"
@@ -180,7 +180,7 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
                 duration = roa["duration"]
                 # print duration information
                 if duration:
-                    comment_str += "**Duration**\n\n"
+                    comment_str += "**Duration:**\n\n"
                     comment_str += f"Total | {expand(duration.get('total'))}\n"
                     comment_str += "---|---\n"
                     comment_str += f"Onset | {expand(duration.get('onset'))}\n"
@@ -191,10 +191,11 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
                     comment_str += "\n\n"
 
         comment_str += "\n\n------\n\n\n\n\n"
-    
-    disclaimer = f"^(I am a bot that links the hopefully relevant psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols.)\n\n"
-    source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)\n\n"
-    obj.reply(comment_str + disclaimer + source_links)
+
+    if substances_added > 0:
+        disclaimer = f"^(I am a bot that links the hopefully relevant psychonautwiki articles to threads with drug discussions. All information sourced directly from psychonautwiki, with no guarantee of accuracy. Please do your own independent research before consuming any substances. This bot is not a replacement for proper research and safety protocols.)\n\n"
+        source_links = f"[^(razorstorm)](https://www.reddit.com/user/razorstorm) ^| [^(github)](https://github.com/razorstorm/reddit-bot-test)\n\n"
+        obj.reply(comment_str + disclaimer + source_links)
 
 
 def standardize_text(text: str) -> str:
