@@ -172,11 +172,11 @@ def write_comment(obj: Union[Comment, Submission], results: Any):
                     units = doses.get('units')
                     comment_str += "Level | Dosage\n"
                     comment_str += "---|---\n"
-                    comment_str += f"Common | {expand(doses.get('common'))} {units}\n"
-                    comment_str += f"Heavy | {expand(doses.get('heavy'))} {units}\n"
-                    comment_str += f"Light | {expand(doses.get('light'))} {units}\n"
-                    comment_str += f"Strong | {expand(doses.get('strong'))} {units}\n"
                     comment_str += f"Threshold | { expand(doses.get('threshold'))} {units}\n"
+                    comment_str += f"Light | {expand(doses.get('light'))} {units}\n"
+                    comment_str += f"Common | {expand(doses.get('common'))} {units}\n"
+                    comment_str += f"Strong | {expand(doses.get('strong'))} {units}\n"
+                    comment_str += f"Heavy | {expand(doses.get('heavy'))} {units}\n"
                     comment_str += "\n\n"
 
                 duration = roa["duration"]
