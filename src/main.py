@@ -25,7 +25,7 @@ PASSWORD = os.getenv("PSYCHONAUT_BOT_PASSWORD")
 
 print(CLIENT, SECRET, USERNAME, PASSWORD)
 
-DONT_COMMENT_KEYWORD = "!nopipi"
+DONT_COMMENT_KEYWORD = "!nojrugs"
 TRIGGER_RANDOMLY = 7
 
 DATE_CUTOFF = "02-01-2022"
@@ -228,6 +228,9 @@ if __name__ == "__main__":
     logger.info("Main    : Creating threads")
     threads = []
     # iterate_posts("bot_test_razor_storm")
+    gabagoodness_thread = threading.Thread(
+        target=iterate_posts, args=("gabagoodness",), name="razor_storm"
+    )
     test_thread = threading.Thread(
         target=iterate_posts, args=("bot_test_razor_storm",), name="razor_storm"
     )
@@ -254,7 +257,8 @@ if __name__ == "__main__":
     # threads.append(mentions_thread)
     # threads.append(cleanup_thread)
 
-    threads.append(test_thread)
+    # threads.append(test_thread)
+    threads.append(gabagoodness_thread)
     # threads.append(drugs_circle_jerk_thread)
 
     logger.info("Main    : Starting threads")
