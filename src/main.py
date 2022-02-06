@@ -28,8 +28,8 @@ print(CLIENT, SECRET, USERNAME, PASSWORD)
 DONT_COMMENT_KEYWORD = "!nojrugs"
 TRIGGER_RANDOMLY = 7
 
-DATE_CUTOFF = "02-01-2022"
-DATE_CUTOFF_TS = time.mktime(datetime.datetime.strptime(DATE_CUTOFF, "%d-%m-%Y").timetuple())
+DATE_CUTOFF = "01-01-2022"
+DATE_CUTOFF_TS = time.mktime(datetime.datetime.strptime(DATE_CUTOFF, "%m-%d-%Y").timetuple())
 
 # Set the path absolute path of the chess_post database
 pickle_path = os.path.dirname(os.path.abspath(__file__)) + "/comments.db"
@@ -237,25 +237,6 @@ if __name__ == "__main__":
     drugs_circle_jerk_thread = threading.Thread(
         target=iterate_posts, args=("drugscirclejerk",), name="razor_storm"
     )
-
-    # mentions_thread = threading.Thread(
-    #     target=listen_and_process_mentions,
-    #     name="mentions",
-    # )
-    # cleanup_thread = threading.Thread(
-    #     target=delete_bad_comments, args=[USERNAME], name="cleanup"
-    # )
-
-    # threads.append(chess_posts_thread)
-    # threads.append(ac_posts_thread)
-    # threads.append(chess_comments_thread)
-    # threads.append(ac_comments_thread)
-    # threads.append(chessbeginners_posts_thread)
-    # threads.append(tournamentchess_posts_thread)
-    # threads.append(chessbeginners_comments_thread)
-    # threads.append(tournamentchess_comments_thread)
-    # threads.append(mentions_thread)
-    # threads.append(cleanup_thread)
 
     # threads.append(test_thread)
     threads.append(gabagoodness_thread)
